@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Heart Fire FINAL PRO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#fff;
+}
+
+#wrap{
+  position:relative;
+  width:420px;
+  height:380px;
+}
+
+/* nền pastel */
+#bg{
+  position:absolute;
+  inset:0;
+  z-index:1;
+}
+
+/* tim + lửa */
+#fire{
+  position:absolute;
+  inset:0;
+  z-index:2;
+}
+
+/* aura */
+#aura{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  mix-blend-mode:screen;
+  pointer-events:none;
+}
+
+/* trung tâm */
+#center{
+  position:absolute;
+  inset:0;
+  z-index:4;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+#circle{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  background:rgb(239, 96, 6);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  box-shadow:0 0 30px rgba(255,150,150,.5);
+}
+
+#circle .day{
+  font-size:20px;
+  font-weight:bold;
+  color:#11296f;
+}
+
+#circle .time{
+  font-size:12px;
+  color:#11296f;
+  margin-top:4px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="wrap">
+  <canvas id="bg" width="420" height="380"></canvas>
+  <canvas id="fire" width="420" height="380"></canvas>
+  <canvas id="aura" width="420" height="380"></canvas>
+
+  <div id="center">
+    <div id="circle">
+      <div class="day">517 DAY</div>
+      <div class="time" id="clock">00:00:00</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== NỀN PASTEL ===== */
+const bg = document.getElementById("bg").getContext("2d");
+function drawBG(t){
+  const g = bg.createRadialGradient(210,190,40,210,190,200);
+  g.addColorStop(0,"rgba(255,200,200,.15)");
+  g.addColorStop(.2,"rgba(255,230,200,.12)");
+  g.addColorStop(.4,"rgba(230,255,230,.12)");
+  g.addColorStop(.6,"rgba(220,230,255,.12)");
+  g.addColorStop(.8,"rgba(240,220,255,.12)");
+  g.addColorStop(1,"rgba(255,255,255,1)");
+  bg.fillStyle=g;
+  bg.fillRect(0,0,420,380);
+}
+
+/* ===== TIM + LỬA THẬT (CHẬM) ===== */
+const fire = document.getElementById("fire").getContext("2d");
+
+function heartPath(ctx,x,y,s){
+  ctx.beginPath();
+  for(let t=0;t<=Math.PI*2;t+=0.02){
+    const X = 16*Math.pow(Math.sin(t),3);
+    const Y = 13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+    ctx.lineTo(x+X*s,y-Y*s);
+  }
+  ctx.closePath();
+}
+
+function drawFire(t){
+  fire.clearRect(0,0,420,380);
+
+  const pulse = 1 + Math.sin(t*1.3)*0.04;
+
+  heartPath(fire,210,190,8.5*pulse);
+
+  const grad = fire.createRadialGradient(210,200,40,210,200,160);
+  grad.addColorStop(0,"#ff3300");
+  grad.addColorStop(.4,"#ff8800");
+  grad.addColorStop(.7,"rgba(255,180,0,.6)");
+  grad.addColorStop(1,"rgba(255,200,0,.15)");
+
+  fire.fillStyle=grad;
+  fire.shadowColor="orange";
+  fire.shadowBlur=30;
+  fire.fill();
+}
+
+/* ===== AURA ===== */
+const aura = document.getElementById("aura").getContext("2d");
+function drawAura(t){
+  aura.clearRect(0,0,420,380);
+  aura.save();
+  aura.beginPath();
+  aura.arc(210,190,60,0,Math.PI*2);
+  aura.clip();
+
+  const g = aura.createConicGradient(t/6,210,190);
+  g.addColorStop(0,"rgba(255,180,200,.25)");
+  g.addColorStop(.2,"rgba(255,230,180,.25)");
+  g.addColorStop(.4,"rgba(220,255,220,.25)");
+  g.addColorStop(.6,"rgba(200,220,255,.25)");
+  g.addColorStop(.8,"rgba(230,200,255,.25)");
+  g.addColorStop(1,"rgba(255,180,200,.25)");
+
+  aura.fillStyle=g;
+  aura.fillRect(140,120,140,140);
+  aura.restore();
+}
+
+/* ===== LOOP ===== */
+function loop(){
+  const t = performance.now()/1000;
+  drawBG(t);
+  drawFire(t);
+  drawAura(t);
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* ===== CLOCK ===== */
+function clock(){
+  const d=new Date();
+  document.getElementById("clock").textContent=
+    `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
+}
+setInterval(clock,1000); clock();
+</script>
+
+</body>
+</html>
