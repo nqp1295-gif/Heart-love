@@ -25,6 +25,7 @@ body{
 canvas{
   position:absolute;
   inset:0;
+  pointer-events:none;
 }
 
 #bg{z-index:1;}
@@ -75,7 +76,7 @@ canvas{
 #overlay{
   position:absolute;
   inset:0;
-  pointer-events:none;
+  pointer-events:auto;
   z-index:20;
   display:none;
   justify-content:center;
@@ -273,6 +274,7 @@ const circle=document.getElementById("circle");
 let sparks=[],popupOpen=false;
 
 circle.addEventListener("click",e=>{
+  e.preventDefault();
   e.stopPropagation();
   popupOpen=true;
   overlay.style.display="flex";
