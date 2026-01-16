@@ -63,7 +63,7 @@ canvas{
   <canvas id="bg" width="420" height="380"></canvas>
   <canvas id="fire" width="420" height="380"></canvas>
   <canvas id="aura" width="420" height="380"></canvas>
-  <canvas id="bubble" width="420" height="380"></canvas>
+  <canvas id="bubble"></canvas>
 
   <div id="center">
     <div id="circle">
@@ -74,7 +74,7 @@ canvas{
 </div>
 
 <script>
-/* ===== FIRE HEART ===== */
+/* ================= FIRE HEART ================= */
 const fire = document.getElementById("fire").getContext("2d");
 
 function heartPath(ctx,x,y,s){
@@ -103,7 +103,7 @@ function drawFire(t){
   fire.fill();
 }
 
-/* ===== AURA ===== */
+/* ================= AURA ================= */
 const aura=document.getElementById("aura").getContext("2d");
 function drawAura(t){
   aura.clearRect(0,0,420,380);
@@ -126,22 +126,30 @@ function drawAura(t){
   aura.restore();
 }
 
-/* ===== TIKTOK HEART BUBBLES ===== */
+/* ================= TIKTOK HEART BUBBLES ================= */
 const bubble=document.getElementById("bubble");
 const btx=bubble.getContext("2d");
+
+/* === FIX iOS RETINA SCALE (LỖI CHÍNH) === */
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+bubble.width = 420 * DPR;
+bubble.height = 380 * DPR;
+bubble.style.width = "420px";
+bubble.style.height = "380px";
+btx.scale(DPR, DPR);
 
 const colors=["#ff4d6d","#ff006e","#c77dff","#ff9f1c","#ff7aa2"];
 let hearts=[];
 let lastTap=0;
 
-function spawnHearts(x,y,count=50){
+function spawnHearts(x,y,count=20){
   for(let i=0;i<count;i++){
     hearts.push({
       x:x+(Math.random()-0.5)*50,
       y:y+(Math.random()-0.5)*50,
-      vx:(Math.random()-0.5)*0.8,
+      vx:(Math.random()-0.5)*0.6,
       vy:Math.random()*4+4,
-      size:Math.random()*30+30,
+      size:Math.random()*50+50,
       life:1,
       rot:Math.random()*Math.PI,
       color:colors[Math.floor(Math.random()*colors.length)]
@@ -156,7 +164,7 @@ function drawHeart(ctx,x,y,s,r,color,a){
   ctx.scale(s,s);
   ctx.globalAlpha=a;
   ctx.shadowColor=color;
-  ctx.shadowBlur=10;
+  ctx.shadowBlur=6;
   ctx.fillStyle=color;
   ctx.beginPath();
   ctx.moveTo(0,-1);
@@ -174,13 +182,13 @@ function animateHearts(){
     h.x+=h.vx;
     h.life-=0.03;
     h.rot+=0.05;
-    drawHeart(btx,h.x,h.y,h.size/10,h.rot,h.color,h.life);
+    drawHeart(btx,h.x,h.y,(h.size/10)/DPR,h.rot,h.color,h.life);
   });
   requestAnimationFrame(animateHearts);
 }
 animateHearts();
 
-/* ===== CLICK / TOUCH ===== */
+/* ================= CLICK / TOUCH ================= */
 const wrap=document.getElementById("wrap");
 
 wrap.addEventListener("click",e=>{
@@ -195,13 +203,13 @@ wrap.addEventListener("touchstart",e=>{
   spawnHearts(
     t.clientX-r.left,
     t.clientY-r.top,
-    now-lastTap<300?16:6
+    now-lastTap<300?12:6
   );
   if(navigator.vibrate) navigator.vibrate(15);
   lastTap=now;
 });
 
-/* ===== LOOP ===== */
+/* ================= LOOP ================= */
 function loop(){
   const t=performance.now()/1000;
   drawFire(t);
@@ -210,7 +218,7 @@ function loop(){
 }
 loop();
 
-/* ===== CLOCK ===== */
+/* ================= CLOCK ================= */
 setInterval(()=>{
   const d=new Date();
   clock.textContent=
