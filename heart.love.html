@@ -77,7 +77,14 @@ body{
   color:#11296f;
   margin-top:4px;
 }
-</style>
+#bubble{
+  position:absolute;
+  inset:0;
+  z-index:3.5;
+  pointer-events:none;
+}
+
+</style> 
 </head>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -144,6 +151,77 @@ function drawFire(t){
   fire.shadowBlur=30;
   fire.fill();
 }
+<script>
+/* ===== HEART BUBBLE EFFECT ===== */
+const bubbleCanvas = document.getElementById("bubble");
+const btx = bubbleCanvas.getContext("2d");
+
+let bubbles = [];
+
+function spawnHearts(x,y){
+  for(let i=0;i<12;i++){
+    bubbles.push({
+      x:x + (Math.random()-0.5)*20,
+      y:y + (Math.random()-0.5)*20,
+      vy:Math.random()*1.2 + 0.8,
+      vx:(Math.random()-0.5)*0.6,
+      size:Math.random()*8 + 8,
+      life:1,
+      rot:Math.random()*Math.PI
+    });
+  }
+}
+
+function drawHeart(ctx,x,y,s,rot){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(rot);
+  ctx.scale(s,s);
+  ctx.beginPath();
+  ctx.moveTo(0,-0.3);
+  ctx.bezierCurveTo(-.5,-.8,-1,.1,0,.9);
+  ctx.bezierCurveTo(1,.1,.5,-.8,0,-.3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function updateBubbles(){
+  btx.clearRect(0,0,420,380);
+
+  bubbles.forEach((b,i)=>{
+    b.y -= b.vy;
+    b.x += b.vx;
+    b.life -= 0.015;
+    b.rot += 0.02;
+
+    btx.globalAlpha = b.life;
+    btx.fillStyle = "rgba(255,60,120,.9)";
+    drawHeart(btx,b.x,b.y,b.size/20,b.rot);
+
+    if(b.life<=0) bubbles.splice(i,1);
+  });
+
+  btx.globalAlpha = 1;
+  requestAnimationFrame(updateBubbles);
+}
+updateBubbles();
+
+/* ===== CLICK / TOUCH ===== */
+const wrap = document.getElementById("wrap");
+
+wrap.addEventListener("click",e=>{
+  const rect = wrap.getBoundingClientRect();
+  spawnHearts(e.clientX-rect.left,e.clientY-rect.top);
+});
+
+wrap.addEventListener("touchstart",e=>{
+  const rect = wrap.getBoundingClientRect();
+  const t = e.touches[0];
+  spawnHearts(t.clientX-rect.left,t.clientY-rect.top);
+});
+</script>
+
 
 /* ===== AURA ===== */
 const aura = document.getElementById("aura").getContext("2d");
