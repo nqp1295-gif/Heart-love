@@ -13,6 +13,7 @@ body{
   justify-content:center;
   align-items:center;
   background:#fff;
+  overflow:hidden;
 }
 
 #wrap{
@@ -49,38 +50,59 @@ canvas{
   flex-direction:column;
   justify-content:center;
   align-items:center;
+  text-align:center;
   box-shadow:0 0 30px rgba(255,120,120,.5);
+  cursor:pointer;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
 }
 
-.day{font-size:20px;font-weight:bold;color:#ff004c;}
-.time{font-size:12px;color:#ff004c;margin-top:4px;}
-  /* === FIX LỆCH CHỮ IPHONE – FINAL PRO === */
-  .center-circle {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+.day{
+  font-size:20px;
+  font-weight:bold;
+  color:#ff004c;
+  line-height:1;
+}
 
-    text-align: center;
-    line-height: 1.1;
-    transform: translateX(-0.5px);
+.time{
+  font-size:12px;
+  color:#ff004c;
+  margin-top:4px;
+  line-height:1;
+}
 
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
-      "Helvetica Neue", Arial, sans-serif;
-  }
+/* ===== POPUP ===== */
+#overlay{
+  position:absolute;
+  inset:0;
+  z-index:20;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  backdrop-filter:blur(6px);
+  background:rgba(0,0,0,.25);
+}
 
-  .day-text {
-    display: block;
-    line-height: 1;
-    transform: translateX(-0.5px);
-  }
+#popup{
+  position:relative;
+  padding:26px 22px;
+  background:rgba(255,255,255,.95);
+  border-radius:18px;
+  text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.25);
+  animation:pop .35s ease;
+}
 
-  .time-text {
-    display: block;
-    line-height: 1;
-    margin-top: 4px;
-    transform: translateX(-0.5px);
-  }
+#popupText{
+  font-size:16px;
+  font-weight:bold;
+  color:#00a651;
+  line-height:1.5;
+}
+
+@keyframes pop{
+  from{transform:scale(.7);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
 </style>
 </head>
 
@@ -94,16 +116,43 @@ canvas{
 
   <div id="center">
     <div id="circle">
-      <div class="day">517 DAY</div>
+      <div class="day" id="days">0 DAY</div>
       <div class="time" id="clock">00:00:00</div>
+    </div>
+  </div>
+
+  <!-- POPUP -->
+  <div id="overlay">
+    <div id="popup">
+      <canvas id="firework" width="260" height="200"
+        style="position:absolute;inset:0;pointer-events:none"></canvas>
+      <div id="popupText"></div>
     </div>
   </div>
 </div>
 
 <script>
-/* ================= FIRE HEART ================= */
-const fire = document.getElementById("fire").getContext("2d");
+/* ===== TIME COUNT ===== */
+const startDate = new Date("2024-08-17T00:00:00");
+function updateTime(){
+  const now = new Date();
+  let diff = Math.floor((now - startDate)/1000);
+  const days = Math.floor(diff/86400);
+  diff%=86400;
+  const h=Math.floor(diff/3600);
+  const m=Math.floor((diff%3600)/60);
+  const s=diff%60;
 
+  daysEl.textContent = days+" DAY";
+  clock.textContent =
+    `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+const daysEl=document.getElementById("days");
+const clock=document.getElementById("clock");
+setInterval(updateTime,1000); updateTime();
+
+/* ===== FIRE HEART ===== */
+const fire=document.getElementById("fire").getContext("2d");
 function heartPath(ctx,x,y,s){
   ctx.beginPath();
   for(let t=0;t<=Math.PI*2;t+=0.02){
@@ -113,24 +162,21 @@ function heartPath(ctx,x,y,s){
   }
   ctx.closePath();
 }
-
 function drawFire(t){
   fire.clearRect(0,0,420,380);
   const p=1+Math.sin(t*1.3)*0.04;
   heartPath(fire,210,190,8.5*p);
-
   const g=fire.createRadialGradient(210,200,40,210,200,160);
   g.addColorStop(0,"#ff3300");
   g.addColorStop(.5,"#ff9900");
   g.addColorStop(1,"rgba(255,200,0,.15)");
-
   fire.fillStyle=g;
   fire.shadowColor="orange";
   fire.shadowBlur=35;
   fire.fill();
 }
 
-/* ================= AURA ================= */
+/* ===== AURA ===== */
 const aura=document.getElementById("aura").getContext("2d");
 function drawAura(t){
   aura.clearRect(0,0,420,380);
@@ -138,7 +184,6 @@ function drawAura(t){
   aura.beginPath();
   aura.arc(210,190,65,0,Math.PI*2);
   aura.clip();
-
   const g=aura.createConicGradient(t/6,210,190);
   ["#ffd6e7","#ffe9cc","#eaffea","#e6f0ff","#f0e6ff","#ffd6e7"]
     .forEach((c,i)=>{
@@ -147,51 +192,44 @@ function drawAura(t){
       const b=parseInt(c.slice(5,7),16);
       g.addColorStop(i/5,`rgba(${r},${g1},${b},.35)`);
     });
-
   aura.fillStyle=g;
   aura.fillRect(120,100,180,180);
   aura.restore();
 }
 
-/* ================= TIKTOK HEART BUBBLES ================= */
+/* ===== TIKTOK HEARTS (FIX iOS) ===== */
 const bubble=document.getElementById("bubble");
 const btx=bubble.getContext("2d");
-
-/* === FIX iOS RETINA SCALE (LỖI CHÍNH) === */
-const DPR = Math.min(window.devicePixelRatio || 1, 2);
-bubble.width = 420 * DPR;
-bubble.height = 380 * DPR;
-bubble.style.width = "420px";
-bubble.style.height = "380px";
-btx.scale(DPR, DPR);
+const DPR=Math.min(window.devicePixelRatio||1,2);
+bubble.width=420*DPR;
+bubble.height=380*DPR;
+bubble.style.width="420px";
+bubble.style.height="380px";
+btx.scale(DPR,DPR);
 
 const colors=["#ff4d6d","#ff006e","#c77dff","#ff9f1c","#ff7aa2"];
-let hearts=[];
-let lastTap=0;
+let hearts=[],lastTap=0;
 
-function spawnHearts(x,y,count=20){
+function spawnHearts(x,y,count=30){
   for(let i=0;i<count;i++){
     hearts.push({
-      x:x+(Math.random()-0.5)*50,
-      y:y+(Math.random()-0.5)*50,
-      vx:(Math.random()-0.5)*0.6,
-      vy:Math.random()*4+4,
-      size:Math.random()*50+50,
+      x:x+(Math.random()-0.5)*60,
+      y:y+(Math.random()-0.5)*60,
+      vx:(Math.random()-0.5)*0.4,
+      vy:Math.random()*5+5,
+      size:Math.random()*20+20,
       life:1,
       rot:Math.random()*Math.PI,
       color:colors[Math.floor(Math.random()*colors.length)]
     });
   }
 }
-
 function drawHeart(ctx,x,y,s,r,color,a){
   ctx.save();
   ctx.translate(x,y);
   ctx.rotate(r);
   ctx.scale(s,s);
   ctx.globalAlpha=a;
-  ctx.shadowColor=color;
-  ctx.shadowBlur=6;
   ctx.fillStyle=color;
   ctx.beginPath();
   ctx.moveTo(0,-1);
@@ -200,7 +238,6 @@ function drawHeart(ctx,x,y,s,r,color,a){
   ctx.fill();
   ctx.restore();
 }
-
 function animateHearts(){
   btx.clearRect(0,0,420,380);
   hearts=hearts.filter(h=>h.life>0);
@@ -209,34 +246,69 @@ function animateHearts(){
     h.x+=h.vx;
     h.life-=0.03;
     h.rot+=0.05;
-    drawHeart(btx,h.x,h.y,(h.size/10)/DPR,h.rot,h.color,h.life);
+    drawHeart(btx,h.x,h.y,h.size/10,h.rot,h.color,h.life);
   });
   requestAnimationFrame(animateHearts);
 }
 animateHearts();
 
-/* ================= CLICK / TOUCH ================= */
-const wrap=document.getElementById("wrap");
-
 wrap.addEventListener("click",e=>{
   const r=wrap.getBoundingClientRect();
-  spawnHearts(e.clientX-r.left,e.clientY-r.top,6);
+  spawnHearts(e.clientX-r.left,e.clientY-r.top);
 });
-
 wrap.addEventListener("touchstart",e=>{
-  const now=Date.now();
   const r=wrap.getBoundingClientRect();
   const t=e.touches[0];
-  spawnHearts(
-    t.clientX-r.left,
-    t.clientY-r.top,
-    now-lastTap<300?12:6
-  );
-  if(navigator.vibrate) navigator.vibrate(15);
-  lastTap=now;
+  spawnHearts(t.clientX-r.left,t.clientY-r.top);
 });
 
-/* ================= LOOP ================= */
+/* ===== POPUP + FIREWORK ===== */
+const overlay=document.getElementById("overlay");
+const popupText=document.getElementById("popupText");
+const firework=document.getElementById("firework");
+const ftx=firework.getContext("2d");
+const circle=document.getElementById("circle");
+let sparks=[],popupOpen=false;
+
+circle.addEventListener("click",e=>{
+  e.stopPropagation();
+  popupOpen=true;
+  overlay.style.display="flex";
+  popupText.innerHTML=
+    `MÌNH ĐÃ CHÍNH THỨC YÊU NHAU ĐƯỢC<br><b>${daysEl.textContent.replace(" DAY","")} ngày ${clock.textContent.split(":")[0]} giờ</b>`;
+  sparks=[];
+  for(let i=0;i<70;i++){
+    sparks.push({
+      x:130,y:100,
+      vx:(Math.random()-0.5)*7,
+      vy:(Math.random()-0.5)*7,
+      life:1
+    });
+  }
+  drawFirework();
+});
+
+overlay.addEventListener("click",()=>{
+  popupOpen=false;
+  overlay.style.display="none";
+});
+
+function drawFirework(){
+  ftx.clearRect(0,0,260,200);
+  sparks=sparks.filter(s=>s.life>0);
+  sparks.forEach(s=>{
+    s.x+=s.vx;
+    s.y+=s.vy;
+    s.life-=0.03;
+    ftx.fillStyle=`rgba(0,200,120,${s.life})`;
+    ftx.beginPath();
+    ftx.arc(s.x,s.y,2,0,Math.PI*2);
+    ftx.fill();
+  });
+  if(popupOpen) requestAnimationFrame(drawFirework);
+}
+
+/* ===== LOOP ===== */
 function loop(){
   const t=performance.now()/1000;
   drawFire(t);
@@ -244,13 +316,6 @@ function loop(){
   requestAnimationFrame(loop);
 }
 loop();
-
-/* ================= CLOCK ================= */
-setInterval(()=>{
-  const d=new Date();
-  clock.textContent=
-    `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
-},1000);
 </script>
 
 </body>
