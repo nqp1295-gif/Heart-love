@@ -21,30 +21,16 @@ body{
   height:380px;
 }
 
-/* nền pastel */
-#bg{
+canvas{
   position:absolute;
   inset:0;
-  z-index:1;
 }
 
-/* tim + lửa */
-#fire{
-  position:absolute;
-  inset:0;
-  z-index:2;
-}
+#bg{z-index:1;}
+#fire{z-index:2;}
+#aura{z-index:3;mix-blend-mode:screen;pointer-events:none;}
+#bubble{z-index:3.5;pointer-events:none;}
 
-/* aura */
-#aura{
-  position:absolute;
-  inset:0;
-  z-index:3;
-  mix-blend-mode:screen;
-  pointer-events:none;
-}
-
-/* trung tâm */
 #center{
   position:absolute;
   inset:0;
@@ -58,37 +44,18 @@ body{
   width:90px;
   height:90px;
   border-radius:50%;
-  background:rgb(239, 96, 6);
+  background:#fff;
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
-  box-shadow:0 0 30px rgba(255,150,150,.5);
+  box-shadow:0 0 30px rgba(255,120,120,.5);
 }
 
-#circle .day{
-  font-size:20px;
-  font-weight:bold;
-  color:#11296f;
-}
-
-#circle .time{
-  font-size:12px;
-  color:#11296f;
-  margin-top:4px;
-}
-#bubble{
-  position:absolute;
-  inset:0;
-  z-index:3.5;
-  pointer-events:none;
-}
-
-</style> 
+.day{font-size:20px;font-weight:bold;color:#ff0000;}
+.time{font-size:12px;color:#ff0000;margin-top:4px;}
+</style>
 </head>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="theme-color" content="#ff0000">
 
 <body>
 
@@ -96,6 +63,7 @@ body{
   <canvas id="bg" width="420" height="380"></canvas>
   <canvas id="fire" width="420" height="380"></canvas>
   <canvas id="aura" width="420" height="380"></canvas>
+  <canvas id="bubble" width="420" height="380"></canvas>
 
   <div id="center">
     <div id="circle">
@@ -106,28 +74,17 @@ body{
 </div>
 
 <script>
-/* ===== NỀN PASTEL ===== */
-const bg = document.getElementById("bg").getContext("2d");
-function drawBG(t){
-  const g = bg.createRadialGradient(210,190,40,210,190,200);
-  g.addColorStop(0,"rgba(255,200,200,.15)");
-  g.addColorStop(.2,"rgba(255,230,200,.12)");
-  g.addColorStop(.4,"rgba(230,255,230,.12)");
-  g.addColorStop(.6,"rgba(220,230,255,.12)");
-  g.addColorStop(.8,"rgba(240,220,255,.12)");
-  g.addColorStop(1,"rgba(255,255,255,1)");
-  bg.fillStyle=g;
-  bg.fillRect(0,0,420,380);
-}
+/* ===== BACKGROUND ===== */
+const bg = bgCtx = document.getElementById("bg").getContext("2d");
 
-/* ===== TIM + LỬA THẬT (CHẬM) ===== */
+/* ===== FIRE HEART ===== */
 const fire = document.getElementById("fire").getContext("2d");
 
 function heartPath(ctx,x,y,s){
   ctx.beginPath();
   for(let t=0;t<=Math.PI*2;t+=0.02){
-    const X = 16*Math.pow(Math.sin(t),3);
-    const Y = 13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+    const X=16*Math.pow(Math.sin(t),3);
+    const Y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
     ctx.lineTo(x+X*s,y-Y*s);
   }
   ctx.closePath();
@@ -135,96 +92,22 @@ function heartPath(ctx,x,y,s){
 
 function drawFire(t){
   fire.clearRect(0,0,420,380);
+  const p=1+Math.sin(t*1.3)*0.04;
+  heartPath(fire,210,190,8.5*p);
 
-  const pulse = 1 + Math.sin(t*1.3)*0.04;
+  const g=fire.createRadialGradient(210,200,40,210,200,160);
+  g.addColorStop(0,"#ff3300");
+  g.addColorStop(.5,"#ff9900");
+  g.addColorStop(1,"rgba(255,200,0,.15)");
 
-  heartPath(fire,210,190,8.5*pulse);
-
-  const grad = fire.createRadialGradient(210,200,40,210,200,160);
-  grad.addColorStop(0,"#ff3300");
-  grad.addColorStop(.4,"#ff8800");
-  grad.addColorStop(.7,"rgba(255,180,0,.6)");
-  grad.addColorStop(1,"rgba(255,200,0,.15)");
-
-  fire.fillStyle=grad;
+  fire.fillStyle=g;
   fire.shadowColor="orange";
-  fire.shadowBlur=30;
+  fire.shadowBlur=35;
   fire.fill();
 }
-<script>
-/* ===== HEART BUBBLE EFFECT ===== */
-const bubbleCanvas = document.getElementById("bubble");
-const btx = bubbleCanvas.getContext("2d");
-
-let bubbles = [];
-
-function spawnHearts(x,y){
-  for(let i=0;i<12;i++){
-    bubbles.push({
-      x:x + (Math.random()-0.5)*20,
-      y:y + (Math.random()-0.5)*20,
-      vy:Math.random()*1.2 + 0.8,
-      vx:(Math.random()-0.5)*0.6,
-      size:Math.random()*8 + 8,
-      life:1,
-      rot:Math.random()*Math.PI
-    });
-  }
-}
-
-function drawHeart(ctx,x,y,s,rot){
-  ctx.save();
-  ctx.translate(x,y);
-  ctx.rotate(rot);
-  ctx.scale(s,s);
-  ctx.beginPath();
-  ctx.moveTo(0,-0.3);
-  ctx.bezierCurveTo(-.5,-.8,-1,.1,0,.9);
-  ctx.bezierCurveTo(1,.1,.5,-.8,0,-.3);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
-function updateBubbles(){
-  btx.clearRect(0,0,420,380);
-
-  bubbles.forEach((b,i)=>{
-    b.y -= b.vy;
-    b.x += b.vx;
-    b.life -= 0.015;
-    b.rot += 0.02;
-
-    btx.globalAlpha = b.life;
-    btx.fillStyle = "rgba(255,60,120,.9)";
-    drawHeart(btx,b.x,b.y,b.size/20,b.rot);
-
-    if(b.life<=0) bubbles.splice(i,1);
-  });
-
-  btx.globalAlpha = 1;
-  requestAnimationFrame(updateBubbles);
-}
-updateBubbles();
-
-/* ===== CLICK / TOUCH ===== */
-const wrap = document.getElementById("wrap");
-
-wrap.addEventListener("click",e=>{
-  const rect = wrap.getBoundingClientRect();
-  spawnHearts(e.clientX-rect.left,e.clientY-rect.top);
-});
-
-wrap.addEventListener("touchstart",e=>{
-  const rect = wrap.getBoundingClientRect();
-  const t = e.touches[0];
-  spawnHearts(t.clientX-rect.left,t.clientY-rect.top);
-});
-</script>
-
 
 /* ===== AURA ===== */
-const aura = document.getElementById("aura").getContext("2d");
+const aura=document.getElementById("aura").getContext("2d");
 function drawAura(t){
   aura.clearRect(0,0,420,380);
   aura.save();
@@ -232,23 +115,79 @@ function drawAura(t){
   aura.arc(210,190,60,0,Math.PI*2);
   aura.clip();
 
-  const g = aura.createConicGradient(t/6,210,190);
-  g.addColorStop(0,"rgba(255,180,200,.25)");
-  g.addColorStop(.2,"rgba(255,230,180,.25)");
-  g.addColorStop(.4,"rgba(220,255,220,.25)");
-  g.addColorStop(.6,"rgba(200,220,255,.25)");
-  g.addColorStop(.8,"rgba(230,200,255,.25)");
-  g.addColorStop(1,"rgba(255,180,200,.25)");
+  const g=aura.createConicGradient(t/6,210,190);
+  ["#ffd6e7","#ffe9cc","#eaffea","#e6f0ff","#f0e6ff","#ffd6e7"]
+    .forEach((c,i)=>g.addColorStop(i/5,`rgba(${parseInt(c.slice(1,3),16)},${parseInt(c.slice(3,5),16)},${parseInt(c.slice(5,7),16)},.3)`));
 
   aura.fillStyle=g;
   aura.fillRect(140,120,140,140);
   aura.restore();
 }
 
+/* ===== HEART BUBBLE (TIKTOK) ===== */
+const bubble=document.getElementById("bubble");
+const btx=bubble.getContext("2d");
+let bubbles=[];
+
+function spawnHearts(x,y){
+  for(let i=0;i<12;i++){
+    bubbles.push({
+      x:x+(Math.random()-0.5)*20,
+      y:y+(Math.random()-0.5)*20,
+      vy:Math.random()*1.2+0.8,
+      vx:(Math.random()-0.5)*0.6,
+      s:Math.random()*0.4+0.4,
+      life:1,
+      r:Math.random()*Math.PI
+    });
+  }
+}
+
+function drawHeart(ctx,x,y,s,r){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(r);
+  ctx.scale(s,s);
+  ctx.beginPath();
+  ctx.moveTo(0,-10);
+  ctx.bezierCurveTo(-15,-25,-30,0,0,30);
+  ctx.bezierCurveTo(30,0,15,-25,0,-10);
+  ctx.fill();
+  ctx.restore();
+}
+
+function updateBubbles(){
+  btx.clearRect(0,0,420,380);
+  bubbles=bubbles.filter(b=>b.life>0);
+  bubbles.forEach(b=>{
+    b.y-=b.vy;
+    b.x+=b.vx;
+    b.life-=0.015;
+    b.r+=0.02;
+    btx.globalAlpha=b.life;
+    btx.fillStyle="rgba(255,60,120,.9)";
+    drawHeart(btx,b.x,b.y,b.s*20,b.r);
+  });
+  btx.globalAlpha=1;
+  requestAnimationFrame(updateBubbles);
+}
+updateBubbles();
+
+/* ===== CLICK / TOUCH ===== */
+const wrap=document.getElementById("wrap");
+wrap.addEventListener("click",e=>{
+  const r=wrap.getBoundingClientRect();
+  spawnHearts(e.clientX-r.left,e.clientY-r.top);
+});
+wrap.addEventListener("touchstart",e=>{
+  const r=wrap.getBoundingClientRect();
+  const t=e.touches[0];
+  spawnHearts(t.clientX-r.left,t.clientY-r.top);
+});
+
 /* ===== LOOP ===== */
 function loop(){
-  const t = performance.now()/1000;
-  drawBG(t);
+  const t=performance.now()/1000;
   drawFire(t);
   drawAura(t);
   requestAnimationFrame(loop);
@@ -256,12 +195,11 @@ function loop(){
 loop();
 
 /* ===== CLOCK ===== */
-function clock(){
+setInterval(()=>{
   const d=new Date();
-  document.getElementById("clock").textContent=
+  clock.textContent=
     `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
-}
-setInterval(clock,1000); clock();
+},1000);
 </script>
 
 </body>
